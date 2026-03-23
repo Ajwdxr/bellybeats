@@ -11,7 +11,8 @@ import { useProfileStore } from "@/stores/profileStore";
 import { supabase } from "@/lib/supabase";
 import { format, parseISO, startOfDay, endOfDay } from "date-fns";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 export default function PartnerDashboard() {
   const { user, initialized } = useAuthStore();
@@ -92,9 +93,12 @@ export default function PartnerDashboard() {
         <Users className="w-16 h-16 text-white/10" />
         <h1 className="text-xl font-bold text-white">No monitoring active</h1>
         <p className="text-white/40 max-w-sm">You haven't been invited to monitor any pregnancy yet. Tell your partner to invite you via your email.</p>
-        <Button variant="outline" className="glass border-white/10" asChild>
-            <Link href="/profile">Go to Profile</Link>
-        </Button>
+        <Link 
+            href="/profile" 
+            className={cn(buttonVariants({ variant: "outline" }), "glass border-white/10 px-8 h-10 rounded-xl font-bold")}
+        >
+            Go to Profile
+        </Link>
     </div>
   );
 
