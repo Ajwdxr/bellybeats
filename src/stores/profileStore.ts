@@ -13,7 +13,7 @@ interface ProfileState {
   fetchProfile: () => Promise<void>;
   updateProfile: (profile: Partial<Profile>) => Promise<void>;
   
-  invitePartner: (email: string) => Promise<void>;
+  invitePartner: (email: string) => Promise<string | void>;
   fetchInvitations: () => Promise<void>;
   fetchPartners: () => Promise<void>;
   updateInvitation: (inviteId: string, status: 'accepted' | 'declined') => Promise<void>;
@@ -68,22 +68,45 @@ export const useProfileStore = create<ProfileState>()(
       },
 
       invitePartner: async (email) => {
+        const { profile } = get();
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('partner_invitations')
           .insert({
             inviter_id: user.id,
             invitee_email: email,
             status: 'pending'
-          });
+          })
+          .select()
+          .single();
 
         if (error) {
-          toast.error('Failed to send invitation');
+          toast.error('Failed to register invitation');
         } else {
-          toast.success(`Invitation sent to ${email}`);
+          // Attempt to send email via API
+          try {
+            const baseUrl = typeof window !== 'undefined' ? window.location.origin : process.env.NEXT_PUBLIC_SITE_URL || '';
+            const inviteLink = `${baseUrl}/signup?invite=${data.id}&email=${encodeURIComponent(email)}`;
+            
+            await fetch('/api/invite', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                email,
+                inviterName: profile?.full_name || 'Your Partner',
+                inviteLink
+              })
+            });
+            // We don't wait for response, it's fire-and-forget/optimistic as we added DB entry
+          } catch (e) {
+            console.warn('API call failed, only database entry was updated.');
+          }
+
+          toast.success(`Invite created for ${email}`);
           get().fetchInvitations();
+          return data.id; 
         }
       },
 
@@ -122,6 +145,34 @@ export const useProfileStore = create<ProfileState>()(
       },
 
       updateInvitation: async (inviteId, status) => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        if (status === 'accepted') {
+          // Get the invitation details to find the inviter
+          const { data: invite } = await supabase
+            .from('partner_invitations')
+            .select('inviter_id')
+            .eq('id', inviteId)
+            .single();
+
+          if (invite) {
+            // Create the active partner link
+            const { error: partnerError } = await supabase
+              .from('partners')
+              .insert({
+                owner_id: invite.inviter_id,
+                partner_id: user.id
+              });
+            
+            if (partnerError) {
+              console.error('Failed to create partner link:', partnerError);
+              toast.error('Failed to finalize connection');
+              return;
+            }
+          }
+        }
+
         const { error } = await supabase
             .from('partner_invitations')
             .update({ status })

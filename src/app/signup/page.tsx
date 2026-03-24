@@ -12,12 +12,23 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 
-export default function SignupPage() {
+import { useSearchParams } from "next/navigation";
+import { Suspense, useEffect } from "react";
+
+function SignupForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const emailParam = searchParams.get("email");
+    if (emailParam) {
+      setEmail(emailParam);
+    }
+  }, [searchParams]);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -141,5 +152,13 @@ export default function SignupPage() {
         </p>
       </GlassCard>
     </div>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-white/50 bg-[#060612]">Loading...</div>}>
+      <SignupForm />
+    </Suspense>
   );
 }

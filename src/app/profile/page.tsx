@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { 
   User, Mail, Calendar, Settings, Bell, Shield, LogOut, 
   ChevronRight, Heart, Sparkles, Pencil, Camera, Phone,
-  Stethoscope, Home, Droplets, Users, Send, Check, X, Trash2
+  Stethoscope, Home, Droplets, Users, Send, Check, X, Trash2, Link as LinkIcon
 } from "lucide-react";
 import { useAuthStore } from "@/stores/authStore";
 import { useProfileStore } from "@/stores/profileStore";
@@ -83,7 +83,20 @@ export default function ProfilePage() {
   const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!partnerEmail.trim()) return;
-    await invitePartner(partnerEmail);
+    const inviteId = await invitePartner(partnerEmail);
+    
+    if (inviteId) {
+        // Build a shareable link (we use signup as it's the entry point for new users)
+        const inviteLink = `${window.location.origin}/signup?invite=${inviteId}&email=${encodeURIComponent(partnerEmail)}`;
+        try {
+            await navigator.clipboard.writeText(inviteLink);
+            toast.success("Invite link copied to clipboard! Share it with your partner.");
+        } catch (err) {
+            console.error("Failed to copy link:", err);
+            toast.success("Invite registered. Tell your partner to sign up with their email.");
+        }
+    }
+    
     setPartnerEmail("");
   };
 
@@ -308,6 +321,21 @@ export default function ProfilePage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
+                    {invite.status === 'pending' && (
+                        <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 text-white/20 hover:text-primary transition-colors"
+                            onClick={() => {
+                                const link = `${window.location.origin}/signup?invite=${invite.id}&email=${encodeURIComponent(invite.invitee_email)}`;
+                                navigator.clipboard.writeText(link);
+                                toast.success("Invite link copied to clipboard!");
+                            }}
+                            title="Copy Invite Link"
+                        >
+                            <LinkIcon className="w-4 h-4" />
+                        </Button>
+                    )}
                     {invite.status === 'pending' && <span className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse shadow-[0_0_8px_rgba(250,204,21,0.5)]" />}
                     <Button variant="ghost" size="icon" className="h-8 w-8 text-white/20 hover:text-red-400">
                       <Trash2 className="w-4 h-4" />
