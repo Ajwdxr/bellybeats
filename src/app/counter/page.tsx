@@ -6,7 +6,7 @@ import { useKickStore } from "@/stores/kickStore";
 import { GlassCard } from "@/components/GlassCard";
 import { KickButton } from "@/components/KickButton";
 import { History, TrendingUp, AlertCircle, Clock, Heart } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow, format } from "date-fns";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
@@ -64,6 +64,11 @@ export default function CounterPage() {
           <span className="text-sm font-medium text-white text-center">
             {lastKickAt ? formatDistanceToNow(new Date(lastKickAt), { addSuffix: true }) : "No kicks yet"}
           </span>
+          {lastKickAt && (
+            <span className="text-[10px] text-white/30 font-mono">
+              {format(new Date(lastKickAt), "h:mm:ss a")}
+            </span>
+          )}
         </GlassCard>
 
         <GlassCard className="p-4 flex flex-col items-center justify-center space-y-1" glowColor="rgba(139, 92, 246, 0.15)">
