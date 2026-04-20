@@ -1,0 +1,76 @@
+#!/bin/bash
+
+# Configuration
+LOG_DIR="./logs"
+LOG_FILE="$LOG_DIR/server.log"
+PID_FILE="$LOG_DIR/server.pid"
+
+case "$1" in
+  start)
+    if [ -f "$PID_FILE" ]; then
+      PID=$(cat "$PID_FILE")
+      if ps -p $PID > /dev/null; then
+        echo "BellyBeats server is already running (PID: $PID)"
+        exit 1
+      else
+        rm "$PID_FILE"
+      fi
+    fi
+
+    echo "Starting BellyBeats server in the background..."
+    mkdir -p "$LOG_DIR"
+    
+    # Run npm start in background and redirect all output to log file
+    # We use nohup to ensure the process continues after the shell is closed
+    nohup npm start > "$LOG_FILE" 2>&1 &
+    
+    # Save the PID
+    echo $! > "$PID_FILE"
+    
+    echo "Server started!"
+    echo "Logs: $LOG_FILE"
+    echo "PID: $(cat $PID_FILE)"
+    ;;
+    
+  stop)
+    echo "Stopping BellyBeats server..."
+    
+    # Try to stop using PID file first
+    if [ -f "$PID_FILE" ]; then
+      PID=$(cat "$PID_FILE")
+      echo "Killing process from PID file ($PID)..."
+      pkill -P $PID > /dev/null 2>&1
+      kill $PID > /dev/null 2>&1
+      rm "$PID_FILE"
+    fi
+
+    # Aggressively find and kill anything using port 3000
+    PORT_PID=$(lsof -t -i:3000)
+    if [ ! -z "$PORT_PID" ]; then
+      echo "Found remaining processes on port 3000 ($PORT_PID). Killing them..."
+      kill -9 $PORT_PID > /dev/null 2>&1
+    fi
+    
+    echo "Server stopped."
+    ;;
+
+  status)
+    if [ -f "$PID_FILE" ]; then
+      PID=$(cat "$PID_FILE")
+      if ps -p $PID > /dev/null; then
+        echo "BellyBeats is RUNNING (PID: $PID)"
+      else
+        echo "BellyBeats is STOPPED (stale PID file found)"
+      fi
+    else
+      echo "BellyBeats is STOPPED"
+    fi
+    ;;
+
+  *)
+    echo "Usage: bellybeats {start|stop|status}"
+    exit 1
+    ;;
+esac
+
+exit 0
