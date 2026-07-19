@@ -56,7 +56,7 @@ export const useProfileStore = create<ProfileState>()(
         if (!user) return;
 
         // Sanitize date input: empty string fails in PostgreSQL date columns
-        const sanitizedUpdates = { ...updates };
+        const sanitizedUpdates: any = { ...updates };
         if (sanitizedUpdates.due_date === '') {
           sanitizedUpdates.due_date = null;
         }
