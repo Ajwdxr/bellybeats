@@ -52,8 +52,8 @@ ALTER TABLE public.kicks ENABLE ROW LEVEL SECURITY;
 -- RLS Policies
 
 -- Profiles
-CREATE POLICY "Users can view their own profile" ON public.profiles
-  FOR SELECT USING (auth.uid() = id);
+CREATE POLICY "Users can view profiles" ON public.profiles
+  FOR SELECT USING (true);
 
 CREATE POLICY "Users can update their own profile" ON public.profiles
   FOR UPDATE USING (auth.uid() = id);

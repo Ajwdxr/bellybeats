@@ -24,7 +24,8 @@ export default function ProfilePage() {
   const { 
     profile, loading, fetchProfile, updateProfile, 
     invitePartner, sentInvitations, receivedInvitations, fetchInvitations,
-    partners, fetchPartners, removePartner, updateInvitation, deleteInvitation
+    partners, fetchPartners, removePartner, updateInvitation, deleteInvitation,
+    partnerProfiles
   } = useProfileStore();
 
   const hasPendingInvite = sentInvitations.some(inv => inv.status === 'pending');
@@ -100,6 +101,16 @@ export default function ProfilePage() {
     }
     
     setPartnerEmail("");
+  };
+
+  const handleRemovePartner = async (partnerUserId: string) => {
+    const link = partners.find(p => 
+      (p.owner_id === user?.id && p.partner_id === partnerUserId) ||
+      (p.partner_id === user?.id && p.owner_id === partnerUserId)
+    );
+    if (link) {
+      await removePartner(link.id);
+    }
   };
 
   const calculateWeek = (dateStr: string) => {
@@ -255,6 +266,39 @@ export default function ProfilePage() {
       {/* Partner Invitation & Received Section */}
       <div className="space-y-4">
         <h3 className="font-semibold text-white/50 text-xs uppercase tracking-widest px-2">Partners & Access</h3>
+        
+        {/* Connected Partners */}
+        {partnerProfiles.length > 0 && (
+          <GlassCard className="p-6 space-y-4 border-green-500/20" glowColor="rgba(34, 197, 94, 0.1)">
+            <Label className="text-[10px] uppercase tracking-widest text-green-400 font-bold">Connected Partners</Label>
+            <div className="space-y-3">
+              {partnerProfiles.map(partner => (
+                <div key={partner.id} className="flex items-center justify-between p-4 rounded-xl bg-green-500/5 border border-green-500/10">
+                  <div className="flex items-center gap-3">
+                    <Avatar className="w-9 h-9 border border-green-500/20">
+                      <AvatarImage src={partner.avatar_url} />
+                      <AvatarFallback className="bg-green-500/10 text-green-400">
+                        {partner.full_name?.substring(0, 2).toUpperCase() || partner.email.substring(0, 2).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="text-sm font-bold text-white">{partner.full_name || "Partner"}</p>
+                      <p className="text-xs text-white/40">{partner.email}</p>
+                    </div>
+                  </div>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-8 rounded-lg text-white/30 hover:text-red-400 hover:bg-red-500/10"
+                    onClick={() => handleRemovePartner(partner.id)}
+                  >
+                    Disconnect
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </GlassCard>
+        )}
         
         {/* Received Invites */}
         {receivedInvitations.length > 0 && (

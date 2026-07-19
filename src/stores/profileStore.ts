@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 interface ProfileState {
   profile: Profile | null;
   partners: PartnerLink[];
+  partnerProfiles: Profile[];
   receivedInvitations: PartnerInvitation[];
   sentInvitations: PartnerInvitation[];
   loading: boolean;
@@ -26,6 +27,7 @@ export const useProfileStore = create<ProfileState>()(
     (set, get) => ({
       profile: null,
       partners: [],
+      partnerProfiles: [],
       receivedInvitations: [],
       sentInvitations: [],
       loading: false,
@@ -158,12 +160,35 @@ export const useProfileStore = create<ProfileState>()(
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
-        const { data } = await supabase
+        const { data: partnersData, error: partnersError } = await supabase
           .from('partners')
           .select('*')
           .or(`owner_id.eq.${user.id},partner_id.eq.${user.id}`);
 
-        set({ partners: (data || []) as PartnerLink[] });
+        if (partnersError || !partnersData) {
+          set({ partners: [], partnerProfiles: [] });
+          return;
+        }
+
+        set({ partners: partnersData as PartnerLink[] });
+
+        const partnerIds = partnersData.map(p => 
+          p.owner_id === user.id ? p.partner_id : p.owner_id
+        );
+
+        if (partnerIds.length > 0) {
+          const { data: profilesData, error: profilesError } = await supabase
+            .from('profiles')
+            .select('*')
+            .in('id', partnerIds);
+
+          if (!profilesError && profilesData) {
+            set({ partnerProfiles: profilesData as Profile[] });
+            return;
+          }
+        }
+
+        set({ partnerProfiles: [] });
       },
 
       updateInvitation: async (inviteId, status) => {
