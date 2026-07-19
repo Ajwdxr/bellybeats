@@ -79,6 +79,12 @@ CREATE POLICY "Users can update invites received" ON public.partner_invitations
 CREATE POLICY "Users can view their own partners" ON public.partners
   FOR SELECT USING (auth.uid() = owner_id OR auth.uid() = partner_id);
 
+CREATE POLICY "Users can insert partner links" ON public.partners
+  FOR INSERT WITH CHECK (auth.uid() = partner_id);
+
+CREATE POLICY "Users can delete partner links" ON public.partners
+  FOR DELETE USING (auth.uid() = owner_id OR auth.uid() = partner_id);
+
 -- Kicks
 CREATE POLICY "Users can view their own kicks" ON public.kicks
   FOR SELECT USING (auth.uid() = user_id);
