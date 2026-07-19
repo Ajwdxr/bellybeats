@@ -18,6 +18,7 @@ interface ProfileState {
   fetchPartners: () => Promise<void>;
   updateInvitation: (inviteId: string, status: 'accepted' | 'declined') => Promise<void>;
   removePartner: (partnerId: string) => Promise<void>;
+  deleteInvitation: (inviteId: string) => Promise<void>;
 }
 
 export const useProfileStore = create<ProfileState>()(
@@ -68,9 +69,30 @@ export const useProfileStore = create<ProfileState>()(
       },
 
       invitePartner: async (email) => {
-        const { profile } = get();
+        const { profile, sentInvitations } = get();
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
+
+        // Check if there is already a pending invitation in state
+        const existingPending = sentInvitations.find(inv => inv.status === 'pending');
+        if (existingPending) {
+          toast.error(`You already have a pending invitation to ${existingPending.invitee_email}. Cancel it before sending another one.`);
+          return;
+        }
+
+        // Direct DB double-check in case local state is not updated yet
+        const { data: dbPending, error: checkError } = await supabase
+          .from('partner_invitations')
+          .select('invitee_email')
+          .eq('inviter_id', user.id)
+          .eq('status', 'pending');
+
+        if (checkError) {
+          console.error('Error checking existing pending invitations:', checkError);
+        } else if (dbPending && dbPending.length > 0) {
+          toast.error(`You already have a pending invitation to ${dbPending[0].invitee_email}.`);
+          return;
+        }
 
         const { data, error } = await supabase
           .from('partner_invitations')
@@ -198,6 +220,20 @@ export const useProfileStore = create<ProfileState>()(
         } else {
           toast.success('Partner removed');
           get().fetchPartners();
+        }
+      },
+
+      deleteInvitation: async (inviteId) => {
+        const { error } = await supabase
+          .from('partner_invitations')
+          .delete()
+          .eq('id', inviteId);
+
+        if (error) {
+          toast.error('Failed to delete invitation');
+        } else {
+          toast.success('Invitation deleted');
+          get().fetchInvitations();
         }
       }
     }),

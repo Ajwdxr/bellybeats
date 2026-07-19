@@ -65,6 +65,16 @@ CREATE POLICY "Users can view invites they sent" ON public.partner_invitations
 CREATE POLICY "Users can send invites" ON public.partner_invitations
   FOR INSERT WITH CHECK (auth.uid() = inviter_id);
 
+CREATE POLICY "Users can delete invites they sent" ON public.partner_invitations
+  FOR DELETE USING (auth.uid() = inviter_id);
+
+CREATE POLICY "Users can view invites received" ON public.partner_invitations
+  FOR SELECT USING (invitee_email = auth.jwt()->>'email' OR invitee_email = (SELECT email FROM public.profiles WHERE id = auth.uid()));
+
+CREATE POLICY "Users can update invites received" ON public.partner_invitations
+  FOR UPDATE USING (invitee_email = auth.jwt()->>'email' OR invitee_email = (SELECT email FROM public.profiles WHERE id = auth.uid()));
+
+
 -- Partners
 CREATE POLICY "Users can view their own partners" ON public.partners
   FOR SELECT USING (auth.uid() = owner_id OR auth.uid() = partner_id);

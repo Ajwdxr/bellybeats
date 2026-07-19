@@ -24,8 +24,10 @@ export default function ProfilePage() {
   const { 
     profile, loading, fetchProfile, updateProfile, 
     invitePartner, sentInvitations, receivedInvitations, fetchInvitations,
-    partners, fetchPartners, removePartner, updateInvitation
+    partners, fetchPartners, removePartner, updateInvitation, deleteInvitation
   } = useProfileStore();
+
+  const hasPendingInvite = sentInvitations.some(inv => inv.status === 'pending');
   
   const [editing, setEditing] = useState(false);
   const [partnerEmail, setPartnerEmail] = useState("");
@@ -295,13 +297,18 @@ export default function ProfilePage() {
                 <Mail className="absolute left-3 top-3 w-4 h-4 text-white/30" />
                 <Input 
                   type="email"
-                  placeholder="partner@example.com"
-                  className="pl-10 glass border-white/5 h-11"
+                  placeholder={hasPendingInvite ? "Only one pending invitation allowed" : "partner@example.com"}
+                  disabled={hasPendingInvite}
+                  className="pl-10 glass border-white/5 h-11 disabled:opacity-50 disabled:cursor-not-allowed"
                   value={partnerEmail}
                   onChange={(e) => setPartnerEmail(e.target.value)}
                 />
              </div>
-             <Button type="submit" className="h-11 rounded-xl px-6 font-bold flex items-center gap-2">
+             <Button 
+               type="submit" 
+               disabled={hasPendingInvite}
+               className="h-11 rounded-xl px-6 font-bold flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+             >
                Invite <Send className="w-4 h-4" />
              </Button>
           </form>
@@ -330,14 +337,20 @@ export default function ProfilePage() {
                                 const link = `${window.location.origin}/signup?invite=${invite.id}&email=${encodeURIComponent(invite.invitee_email)}`;
                                 navigator.clipboard.writeText(link);
                                 toast.success("Invite link copied to clipboard!");
-                            }}
+                             }}
                             title="Copy Invite Link"
                         >
                             <LinkIcon className="w-4 h-4" />
                         </Button>
                     )}
                     {invite.status === 'pending' && <span className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse shadow-[0_0_8px_rgba(250,204,21,0.5)]" />}
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-white/20 hover:text-red-400">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-8 w-8 text-white/20 hover:text-red-400"
+                      onClick={() => deleteInvitation(invite.id)}
+                      title="Delete Invitation"
+                    >
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   </div>
