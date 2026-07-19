@@ -15,12 +15,15 @@ import {
   Smile, Activity, HeartPulse
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { format, subDays, startOfDay, endOfDay, parseISO } from "date-fns";
+import { format, subDays, startOfDay, endOfDay, parseISO, differenceInWeeks } from "date-fns";
+import { useProfileStore } from "@/stores/profileStore";
+import { getBabyProgress } from "@/lib/babyProgress";
 
 export default function DashboardPage() {
   const router = useRouter();
   const { user, initialized } = useAuthStore();
   const { todayKicks, fetchTodayKicks } = useKickStore();
+  const { profile, fetchProfile } = useProfileStore();
   
   const [dailyHistory, setDailyHistory] = useState<any[]>([]);
   const [hourlyDistribution, setHourlyDistribution] = useState<any[]>([]);
@@ -34,8 +37,24 @@ export default function DashboardPage() {
     if (user) {
       fetchTodayKicks(user.id);
       fetchHistoricalData(user.id);
+      fetchProfile();
     }
-  }, [user, initialized, router, fetchTodayKicks]);
+  }, [user, initialized, router, fetchTodayKicks, fetchProfile]);
+
+  const calculateWeek = (dateStr: string) => {
+    if (!dateStr) return null;
+    try {
+      const dueDate = parseISO(dateStr);
+      const conceptionDate = new Date(dueDate.getTime() - (280 * 24 * 60 * 60 * 1000));
+      const weeks = differenceInWeeks(new Date(), conceptionDate);
+      return Math.max(1, Math.min(42, weeks));
+    } catch {
+      return null;
+    }
+  };
+
+  const pregnancyWeek = profile?.due_date ? calculateWeek(profile.due_date) : null;
+  const babyProgress = pregnancyWeek !== null ? getBabyProgress(pregnancyWeek) : null;
 
   const fetchHistoricalData = async (userId: string) => {
     try {
@@ -112,6 +131,42 @@ export default function DashboardPage() {
             </button>
         </div>
       </header>
+
+      {/* Baby Progress Weekly Milestone Card */}
+      {babyProgress && (
+        <GlassCard className="p-6 relative overflow-hidden flex flex-col md:flex-row gap-6 items-center border-primary/20" glowColor="rgba(139, 92, 246, 0.15)">
+          <div className="text-5xl p-4 bg-primary/10 rounded-2xl border border-primary/10 shadow-[0_0_25px_rgba(96,165,250,0.15)] flex items-center justify-center select-none animate-pulse">
+            {babyProgress.emoji}
+          </div>
+          <div className="flex-1 space-y-3 text-center md:text-left">
+            <div>
+              <span className="text-[10px] bg-primary/20 text-primary border border-primary/20 px-2.5 py-0.5 rounded-full font-bold uppercase tracking-widest">
+                Week {babyProgress.week} of 40
+              </span>
+              <h2 className="text-xl font-bold text-white mt-2">
+                Your baby is the size of a <span className="text-primary">{babyProgress.size}</span>!
+              </h2>
+            </div>
+            <p className="text-xs text-white/60 leading-relaxed max-w-2xl">
+              {babyProgress.description}
+            </p>
+            
+            <div className="pt-2">
+              <div className="w-full bg-white/5 h-2 rounded-full overflow-hidden">
+                <div 
+                  className="bg-primary h-full rounded-full transition-all duration-1000 shadow-[0_0_8px_rgba(96,165,250,0.6)]" 
+                  style={{ width: `${Math.min(100, (babyProgress.week / 40) * 100)}%` }}
+                />
+              </div>
+              <div className="flex justify-between text-[9px] text-white/20 mt-1.5 uppercase tracking-wider font-bold">
+                <span>First Trimester</span>
+                <span>Week 20 (Halfway)</span>
+                <span>Week 40 (Due)</span>
+              </div>
+            </div>
+          </div>
+        </GlassCard>
+      )}
 
       {/* Quick Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
