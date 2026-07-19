@@ -19,7 +19,7 @@ export async function POST(request: Request) {
         'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: 'BellyBeats <onboarding@resend.dev>', // Default Resend test domain
+        from: process.env.RESEND_FROM_EMAIL || 'BellyBeats <onboarding@resend.dev>',
         to: [email],
         subject: `Invitation to monitor ${inviterName}'s baby kicks`,
         html: `
