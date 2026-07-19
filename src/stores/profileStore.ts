@@ -55,9 +55,15 @@ export const useProfileStore = create<ProfileState>()(
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
+        // Sanitize date input: empty string fails in PostgreSQL date columns
+        const sanitizedUpdates = { ...updates };
+        if (sanitizedUpdates.due_date === '') {
+          sanitizedUpdates.due_date = null;
+        }
+
         const { data, error } = await supabase
           .from('profiles')
-          .update(updates)
+          .update(sanitizedUpdates)
           .eq('id', user.id)
           .select()
           .single();
