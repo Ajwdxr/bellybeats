@@ -188,9 +188,13 @@ export const useProfileStore = create<ProfileState>()(
               });
             
             if (partnerError) {
-              console.error('Failed to create partner link:', partnerError);
-              toast.error('Failed to finalize connection');
-              return;
+              if (partnerError.code === '23505') {
+                console.warn('Partner link already exists, continuing...');
+              } else {
+                console.error('Failed to create partner link:', partnerError);
+                toast.error('Failed to finalize connection');
+                return;
+              }
             }
           }
         }
