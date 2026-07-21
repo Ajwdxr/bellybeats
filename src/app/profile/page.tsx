@@ -139,37 +139,39 @@ export default function ProfilePage() {
       </header>
 
       {/* Profile Header Card */}
-      <GlassCard className="p-8 relative overflow-hidden text-center flex flex-col items-center gap-6" glowColor="rgba(139, 92, 246, 0.2)">
-        <div className="relative group">
-          <Avatar className="w-24 h-24 border-2 border-primary/50 shadow-2xl">
-            <AvatarImage src={user?.user_metadata?.avatar_url || ""} />
-            <AvatarFallback className="bg-primary/20 text-primary text-2xl font-bold">
-              {user?.email?.charAt(0).toUpperCase() || <User size={32} />}
-            </AvatarFallback>
-          </Avatar>
-          <button className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg border-2 border-white/10 opacity-0 group-hover:opacity-100 transition-opacity translate-y-2 group-hover:translate-y-0 duration-300">
-            <Camera className="w-4 h-4" />
-          </button>
-        </div>
+      <GlassCard className="p-8 relative overflow-hidden text-center" glowColor="rgba(139, 92, 246, 0.2)">
+        <div className="flex flex-col items-center justify-center gap-6 w-full">
+          <div className="relative group mx-auto">
+            <Avatar className="w-24 h-24 border-2 border-primary/50 shadow-2xl">
+              <AvatarImage src={user?.user_metadata?.avatar_url || ""} />
+              <AvatarFallback className="bg-primary/20 text-primary text-2xl font-bold">
+                {user?.email?.charAt(0).toUpperCase() || <User size={32} />}
+              </AvatarFallback>
+            </Avatar>
+            <button className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg border-2 border-white/10 opacity-0 group-hover:opacity-100 transition-opacity translate-y-2 group-hover:translate-y-0 duration-300">
+              <Camera className="w-4 h-4" />
+            </button>
+          </div>
 
-        <div className="space-y-1">
-           <h2 className="text-2xl font-bold text-white">{formData.full_name || "Mom-to-be"}</h2>
-           <p className="text-white/40 text-sm">{user?.email}</p>
-        </div>
+          <div className="space-y-1 text-center">
+             <h2 className="text-2xl font-bold text-white">{formData.full_name || "Mom-to-be"}</h2>
+             <p className="text-white/40 text-sm">{user?.email}</p>
+          </div>
 
-        <div className="flex flex-wrap justify-center gap-2">
-          {pregnancyWeek !== null && (
-            <div className="px-4 py-1.5 rounded-full bg-pink-500/10 border border-pink-500/20 text-pink-400 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-[0_4px_12px_rgba(236,72,153,0.1)]">
-              <Heart className="w-3 h-3 fill-pink-400" />
-              {pregnancyWeek} Weeks
-            </div>
-          )}
-          {formData.blood_type && (
-            <div className="px-4 py-1.5 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-[0_4px_12px_rgba(239,68,68,0.1)]">
-              <Droplets className="w-3 h-3 fill-red-400" />
-              Type {formData.blood_type}
-            </div>
-          )}
+          <div className="flex flex-wrap justify-center gap-2">
+            {pregnancyWeek !== null && (
+              <div className="px-4 py-1.5 rounded-full bg-pink-500/10 border border-pink-500/20 text-pink-400 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-[0_4px_12px_rgba(236,72,153,0.1)]">
+                <Heart className="w-3 h-3 fill-pink-400" />
+                {pregnancyWeek} Weeks
+              </div>
+            )}
+            {formData.blood_type && (
+              <div className="px-4 py-1.5 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-[0_4px_12px_rgba(239,68,68,0.1)]">
+                <Droplets className="w-3 h-3 fill-red-400" />
+                Type {formData.blood_type}
+              </div>
+            )}
+          </div>
         </div>
       </GlassCard>
 
