@@ -12,7 +12,7 @@ import {
 } from "recharts";
 import { 
   Trophy, TrendingUp, Calendar, Clock, ChevronRight, Filter, 
-  Smile, Activity, HeartPulse
+  Smile, Activity, HeartPulse, Sparkles, AlertTriangle, Zap, Brain
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, subDays, startOfDay, endOfDay, parseISO, differenceInWeeks } from "date-fns";
@@ -58,17 +58,16 @@ export default function DashboardPage() {
 
   const fetchHistoricalData = async (userId: string) => {
     try {
-      // Last 7 days aggregation
       const { data: kicks } = await supabase
         .from('kicks')
-        .select('kicked_at')
+        .select('kicked_at, intensity')
         .eq('user_id', userId)
         .order('kicked_at', { ascending: false });
 
       if (kicks) {
         setTotalKicks(kicks.length);
         
-        // Group by Day
+        // Group by Day (Last 7 Days)
         const dayGroups: any = {};
         for (let i = 0; i < 7; i++) {
           const date = subDays(new Date(), i);
@@ -83,7 +82,6 @@ export default function DashboardPage() {
           }
         });
 
-        // Finalize chart data in correct order
         const dailyChartData = Object.keys(dayGroups).reverse().map(day => ({
           day, count: dayGroups[day]
         }));
@@ -95,7 +93,7 @@ export default function DashboardPage() {
           const hour = parseISO(k.kicked_at).getHours();
           if (hour < 6) hourGroups["00-06"] += 1;
           else if (hour < 12) hourGroups["06-12"] += 1;
-          else if (hour < 18) hourGroups["12-18"] += 1;
+          else if (hour < 18) hourGroups["18-00"] += 1;
           else hourGroups["18-00"] += 1;
         });
 
@@ -109,9 +107,33 @@ export default function DashboardPage() {
     }
   };
 
+  // Peak Hour Calculation (AI Prediction)
+  const peakHourSlot = useMemo(() => {
+    if (!hourlyDistribution.length) return "18:00 - 00:00";
+    const sorted = [...hourlyDistribution].sort((a, b) => b.count - a.count);
+    const top = sorted[0]?.hour;
+    if (top === "18-00") return "6:00 PM - 12:00 AM";
+    if (top === "12-18") return "12:00 PM - 6:00 PM";
+    if (top === "06-12") return "6:00 AM - 12:00 PM";
+    return "12:00 AM - 6:00 AM";
+  }, [hourlyDistribution]);
+
+  // Average Kicks calculation & Anomaly Warning
+  const dailyAverage = useMemo(() => {
+    if (dailyHistory.length === 0) return 0;
+    const sum = dailyHistory.reduce((a, b) => a + b.count, 0);
+    return sum / dailyHistory.length;
+  }, [dailyHistory]);
+
+  const showAnomalyWarning = useMemo(() => {
+    const currentHour = new Date().getHours();
+    // If it's evening (>5pm) and today's kicks are significantly lower than average
+    return currentHour >= 17 && dailyAverage > 5 && todayKicks < (dailyAverage * 0.4);
+  }, [todayKicks, dailyAverage]);
+
   const stats = [
     { label: "Today's Total", value: todayKicks.toString(), icon: Smile, color: "text-blue-400", bg: "bg-blue-400/10" },
-    { label: "Avg / Day", value: dailyHistory.length > 0 ? (dailyHistory.reduce((a, b) => a + b.count, 0) / dailyHistory.length).toFixed(1) : "0", icon: Clock, color: "text-purple-400", bg: "bg-purple-400/10" },
+    { label: "Avg / Day", value: dailyAverage.toFixed(1), icon: Clock, color: "text-purple-400", bg: "bg-purple-400/10" },
     { label: "Total History", value: totalKicks.toString(), icon: HeartPulse, color: "text-pink-400", bg: "bg-pink-400/10" },
     { label: "Active Days", value: dailyHistory.filter(d => d.count > 0).length.toString(), icon: Activity, color: "text-green-400", bg: "bg-green-400/10" },
   ];
@@ -120,17 +142,53 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
+      {/* Header */}
       <header className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-white tracking-tight">Dashboard</h1>
-          <p className="text-white/40 text-sm">Real-time BellyBeats data</p>
+          <p className="text-white/40 text-sm">Real-time BellyBeats AI insights</p>
         </div>
-        <div className="flex gap-2">
-            <button className="w-10 h-10 rounded-full glass flex items-center justify-center hover:bg-white/10 transition-colors">
-              <Calendar className="w-4 h-4 text-white/60" />
-            </button>
-        </div>
+        <button className="w-10 h-10 rounded-full glass flex items-center justify-center hover:bg-white/10 transition-colors">
+          <Calendar className="w-4 h-4 text-white/60" />
+        </button>
       </header>
+
+      {/* AI Smart Anomaly Alert (Conditional) */}
+      {showAnomalyWarning && (
+        <div className="p-5 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-200 space-y-2 shadow-lg backdrop-blur-md">
+          <div className="flex items-center gap-2 font-bold text-sm text-amber-300">
+            <AlertTriangle className="w-5 h-5 text-amber-400" />
+            <span>AI Movement Alert</span>
+          </div>
+          <p className="text-xs leading-relaxed text-amber-200/80">
+            Today's kick count ({todayKicks}) is lower than your 7-day average ({dailyAverage.toFixed(1)}). Consider doing a 10-kick session.
+          </p>
+          <button 
+            onClick={() => router.push("/counter")} 
+            className="mt-1 text-xs font-bold text-amber-300 underline hover:text-amber-100 flex items-center gap-1"
+          >
+            Start Kick-to-10 Session Now <ChevronRight className="w-3 h-3" />
+          </button>
+        </div>
+      )}
+
+      {/* AI Peak Activity Prediction Tile */}
+      <GlassCard className="p-6 relative overflow-hidden bg-gradient-to-r from-primary/10 via-purple-500/10 to-transparent border-primary/20" glowColor="rgba(96, 165, 250, 0.2)">
+        <div className="flex items-start gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-primary/20 border border-primary/30 flex items-center justify-center text-primary shadow-[0_0_20px_rgba(96,165,250,0.3)]">
+            <Brain className="w-6 h-6 animate-pulse" />
+          </div>
+          <div className="space-y-1 flex-1">
+            <span className="text-[10px] uppercase font-bold tracking-widest text-primary flex items-center gap-1">
+              <Sparkles className="w-3 h-3" /> AI Pattern Prediction
+            </span>
+            <h3 className="text-lg font-bold text-white">Peak Active Hours</h3>
+            <p className="text-xs text-white/60 leading-relaxed">
+              Your baby is most active between <span className="text-primary font-bold">{peakHourSlot}</span>. Great time for a kick session!
+            </p>
+          </div>
+        </div>
+      </GlassCard>
 
       {/* Baby Progress Weekly Milestone Card */}
       {babyProgress && (
@@ -187,9 +245,8 @@ export default function DashboardPage() {
           <div className="p-6 border-b border-white/5 flex items-center justify-between">
             <h3 className="font-semibold text-white flex items-center gap-2">
               <TrendingUp className="w-4 h-4 text-primary" />
-              Daily Activity
+              Daily Activity (Last 7 Days)
             </h3>
-            <span className="text-xs text-white/30">Last 7 Days</span>
           </div>
           <div className="h-64 w-full p-4 min-h-[256px]">
             <ResponsiveContainer width="100%" height="100%">
@@ -251,18 +308,18 @@ export default function DashboardPage() {
 
             <GlassCard className="p-6 flex flex-col justify-center gap-4 bg-primary/10 border-primary/20">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center text-primary-foreground shadow-[0_0_20px_rgba(96,165,250,0.4)]">
+                <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center text-primary-foreground shadow-[0_0_20px_rgba(96,165,250,0.4)] flex-shrink-0">
                   <Trophy className="w-6 h-6" />
                 </div>
                 <div>
                   <h3 className="font-bold text-lg text-white">Doing Great!</h3>
-                  <p className="text-sm text-white/60">Your baby is very active this week.</p>
+                  <p className="text-sm text-white/60">Healthy movement profiles indicate baby's well-being.</p>
                 </div>
               </div>
-              <p className="text-xs text-white/40 leading-relaxed italic border-l-2 border-primary/50 pl-3">
-                "Healthy movement profiles indicate baby's well-being. BellyBeats helps you stay connected."
-              </p>
-              <button className="text-primary text-xs font-bold hover:underline self-end flex items-center gap-1" onClick={() => router.push("/counter")}>
+              <button 
+                className="text-primary text-xs font-bold hover:underline self-end flex items-center gap-1 mt-2" 
+                onClick={() => router.push("/counter")}
+              >
                 Log Now <ChevronRight className="w-3 h-3" />
               </button>
             </GlassCard>

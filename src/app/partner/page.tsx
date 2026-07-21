@@ -14,6 +14,8 @@ import Link from "next/link";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
+import { PartnerSendReaction } from "@/components/PartnerReactions";
+
 export default function PartnerDashboard() {
   const { user, initialized } = useAuthStore();
   const { partners, fetchPartners } = useProfileStore();
@@ -121,7 +123,7 @@ export default function PartnerDashboard() {
         </div>
       </header>
 
-      <GlassCard className="p-6 relative overflow-hidden bg-gradient-to-br from-primary/20 to-pink-500/20 border-primary/20" glowColor="rgba(96, 165, 250, 0.2)">
+      <GlassCard className="p-6 relative overflow-hidden bg-gradient-to-br from-primary/20 to-pink-500/20 border-primary/20 space-y-4" glowColor="rgba(96, 165, 250, 0.2)">
         <div className="flex items-start gap-4">
             <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center text-white shrink-0">
                 <Heart className="w-6 h-6 fill-white" />
@@ -130,6 +132,11 @@ export default function PartnerDashboard() {
                 <h2 className="text-lg font-bold text-white leading-tight">You are monitoring {ownerProfile.baby_name || "Baby"}'s activity</h2>
                 <p className="text-sm text-white/60">Currently on week {calculateWeek(ownerProfile.due_date)} of the pregnancy.</p>
             </div>
+        </div>
+
+        <div className="pt-2">
+          <span className="text-[10px] uppercase font-bold tracking-widest text-white/40 block mb-2">Send Live Encouragement</span>
+          <PartnerSendReaction partnerUserId={ownerProfile.id} />
         </div>
       </GlassCard>
 

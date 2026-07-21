@@ -4,6 +4,7 @@ import "./globals.css";
 import { BottomNav } from "@/components/BottomNav";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/components/AuthProvider";
+import { PartnerReactions } from "@/components/PartnerReactions";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -31,6 +32,7 @@ export default function RootLayout({
     <html lang="en" className="dark" suppressHydrationWarning>
       <body className={`${inter.variable} font-sans pb-24 md:pb-32`} suppressHydrationWarning>
         <AuthProvider>
+          <PartnerReactions />
           <main className="container mx-auto px-4 py-8 max-w-lg min-h-screen">
             {children}
           </main>

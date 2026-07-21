@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, ChartBar, Activity, UserCircle, Users } from "lucide-react";
+import { Home, ChartBar, Activity, UserCircle, Users, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/authStore";
 
@@ -14,9 +14,10 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { label: "Home", href: "/dashboard", icon: ChartBar },
+  { label: "Dashboard", href: "/dashboard", icon: ChartBar },
   { label: "Counter", href: "/counter", icon: Activity },
-  { label: "Monitoring", href: "/partner", icon: Users },
+  { label: "Labor Prep", href: "/labor", icon: Clock },
+  { label: "Partner", href: "/partner", icon: Users },
   { label: "Profile", href: "/profile", icon: UserCircle },
 ];
 
